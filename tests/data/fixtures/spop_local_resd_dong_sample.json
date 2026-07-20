@@ -1,0 +1,32 @@
+{
+  "SPOP_LOCAL_RESD_DONG": {
+    "list_total_count": 3,
+    "RESULT": {
+      "CODE": "INFO-000",
+      "MESSAGE": "정상 처리되었습니다"
+    },
+    "row": [
+      {
+        "STDR_DE_ID": "20260716",
+        "TMZON_PD_SE": "00",
+        "ADSTRD_CODE_SE": "11200610",
+        "TOT_LVPOP_CO": "14706.1422",
+        "MALE_F0T9_LVPOP_CO": "477.7871"
+      },
+      {
+        "STDR_DE_ID": "20260716",
+        "TMZON_PD_SE": "00",
+        "ADSTRD_CODE_SE": "11200620",
+        "TOT_LVPOP_CO": "11104.7553",
+        "MALE_F0T9_LVPOP_CO": "246.9905"
+      },
+      {
+        "STDR_DE_ID": "20260716",
+        "TMZON_PD_SE": "00",
+        "ADSTRD_CODE_SE": "11110515",
+        "TOT_LVPOP_CO": "20241.4322",
+        "MALE_F0T9_LVPOP_CO": "689.6714"
+      }
+    ]
+  }
+}
