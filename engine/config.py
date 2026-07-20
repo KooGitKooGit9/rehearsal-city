@@ -24,6 +24,10 @@ class RegionConfig:
     def citizens_path(self) -> Path:
         return CACHE_DIR / f"{self.slug}_citizens.geojson"
 
+    @property
+    def pois_path(self) -> Path:
+        return CACHE_DIR / f"{self.slug}_pois.geojson"
+
 
 DEMO_REGION = RegionConfig(
     slug="seongsu",
