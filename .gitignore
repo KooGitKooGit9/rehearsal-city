@@ -24,7 +24,6 @@ build/
 node_modules/
 web/build/
 web/dist/
-web/public/citizens.geojson
 npm-debug.log*
 yarn-error.log*
 .pnpm-debug.log*

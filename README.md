@@ -23,9 +23,9 @@ source .venv/bin/activate     # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 cp .env.example .env          # API 키 입력
 
-# 지도 대시보드 (합성 인구 생성 후 실행)
-python -m engine.generate_population
-cd web && npm install && npm run dev
+# 실시간 시뮬레이션 대시보드 (터미널 2개 필요)
+uvicorn api.main:app --reload           # 터미널 1: FastAPI + WebSocket
+cd web && npm install && npm run dev     # 터미널 2: React + deck.gl
 ```
 
 ## 문서

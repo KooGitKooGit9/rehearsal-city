@@ -4,9 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "predev": "node scripts/copy-citizens.mjs",
     "dev": "vite",
-    "prebuild": "node scripts/copy-citizens.mjs",
     "build": "vite build",
     "lint": "oxlint",
     "preview": "vite preview"

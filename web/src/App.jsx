@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import DeckGL from "@deck.gl/react";
 import { TileLayer, BitmapLayer, GeoJsonLayer } from "deck.gl";
 import "./App.css";
@@ -12,13 +12,33 @@ const INITIAL_VIEW_STATE = {
   bearing: 0,
 };
 
-const GENDER_COLOR = {
-  MALE: [66, 133, 244, 200],
-  FEMALE: [234, 67, 53, 200],
+const WS_URL = "ws://localhost:8000/ws/simulation";
+
+const ACTIVITY_COLOR = {
+  HOME: [128, 128, 128, 180],
+  COMMUTING: [251, 140, 0, 210],
+  WORK: [66, 133, 244, 210],
+  LEISURE: [234, 67, 53, 220],
+  RETURNING: [156, 39, 176, 210],
 };
 
 function App() {
   const [hoverInfo, setHoverInfo] = useState(null);
+  const [snapshot, setSnapshot] = useState(null);
+  const [connected, setConnected] = useState(false);
+  const wsRef = useRef(null);
+
+  useEffect(() => {
+    const ws = new WebSocket(WS_URL);
+    wsRef.current = ws;
+
+    ws.onopen = () => setConnected(true);
+    ws.onclose = () => setConnected(false);
+    ws.onerror = () => setConnected(false);
+    ws.onmessage = (event) => setSnapshot(JSON.parse(event.data));
+
+    return () => ws.close();
+  }, []);
 
   const layers = [
     new TileLayer({
@@ -43,11 +63,12 @@ function App() {
     }),
     new GeoJsonLayer({
       id: "citizens",
-      data: "/citizens.geojson",
+      data: snapshot ?? { type: "FeatureCollection", features: [] },
       pointType: "circle",
       getPointRadius: 8,
       pointRadiusUnits: "meters",
-      getFillColor: (f) => GENDER_COLOR[f.properties.gender] ?? [128, 128, 128, 200],
+      getFillColor: (f) => ACTIVITY_COLOR[f.properties.activity] ?? [128, 128, 128, 200],
+      updateTriggers: { getFillColor: [snapshot?.tick] },
       pickable: true,
       onHover: (info) => setHoverInfo(info.object ? info : null),
     }),
@@ -74,10 +95,30 @@ function App() {
             boxShadow: "0 1px 4px rgba(0,0,0,0.3)",
           }}
         >
+          <div>활동: {hoverInfo.object.properties.activity}</div>
           <div>성별: {hoverInfo.object.properties.gender}</div>
           <div>연령대: {hoverInfo.object.properties.age_band}</div>
         </div>
       )}
+      <div
+        style={{
+          position: "absolute",
+          top: 8,
+          left: 8,
+          background: "rgba(255,255,255,0.85)",
+          padding: "6px 10px",
+          borderRadius: 4,
+          fontSize: 14,
+        }}
+      >
+        {connected ? (
+          <span>시뮬레이션 시각: {snapshot?.clock ?? "-"}</span>
+        ) : (
+          <span style={{ color: "#c62828" }}>
+            서버 연결 안 됨 — api 서버(uvicorn api.main:app)를 실행하세요
+          </span>
+        )}
+      </div>
       <div
         style={{
           position: "absolute",
