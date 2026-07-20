@@ -3,8 +3,8 @@
 > 현재 단계: **Phase 0** (완료한 항목에 [x] 체크하며 진행)
 
 ## Phase 0 — 기반 세팅
-- [ ] 공공 API 인증키 신청 (공공데이터포털 상가정보, 서울 열린데이터광장 생활인구·상권분석, KOSIS)
-- [ ] GitHub public 레포 생성: MIT 라이선스, README 골격
+- [x] 공공 API 인증키 신청 (공공데이터포털 상가정보, 서울 열린데이터광장 생활인구·상권분석, KOSIS) → `.env`
+- [x] GitHub public 레포 생성: MIT 라이선스, README 골격 (github.com/KooGitKooGit9/rehearsal-city)
 - [x] docker-compose.yml 작성: PostgreSQL + PostGIS 컨테이너
 - [x] Python 가상환경 + requirements.txt 초기화
 - [x] 데모 지역 확정: 서울 성수동 (.env `TARGET_REGION`)
@@ -12,7 +12,7 @@
 
 ## Phase 1 — 데이터 파이프라인과 합성 인구
 - [ ] 수집 스크립트: 상가 위치·업종, 동별 인구통계, 시간대별 생활인구 → DB 적재
-- [ ] OSMnx로 성수동 도로망 그래프 확보, 최단경로 탐색 검증
+- [x] OSMnx로 성수동 도로망 그래프 확보, 최단경로 탐색 검증 (`engine/network/`, 노드 464·엣지 1,396, 로컬 캐시)
 - [ ] 합성 인구 생성기: 통계 분포 기반 시민 생성 (연령·직업·거주지·직장·소비 성향)
 - [ ] deck.gl 지도 뷰에 시민 1,000명 렌더링
 

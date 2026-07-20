@@ -17,6 +17,7 @@ shapely>=2.0,<3.0
 geopandas>=1.0,<2.0
 osmnx>=2.0,<3.0
 networkx>=3.3,<4.0
+scikit-learn>=1.5,<2.0  # osmnx.distance.nearest_nodes 가 비투영(위경도) 그래프에서 BallTree 탐색에 사용
 
 # --- 데이터베이스 (PostgreSQL + PostGIS) ---
 psycopg[binary]>=3.2,<4.0
