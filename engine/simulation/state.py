@@ -22,6 +22,8 @@ class CitizenState:
     path: list[int] = field(default_factory=list)
     edge_progress_m: float = 0.0
     dwell_remaining: int = 0
+    habitual_store_node: int | None = None
+    decided_new_stores: set[int] = field(default_factory=set)
 
     @classmethod
     def at_home(cls, citizen: Citizen) -> "CitizenState":

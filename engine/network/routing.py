@@ -13,6 +13,14 @@ def shortest_path_between_nodes(graph: nx.MultiDiGraph, orig_node: int, dest_nod
     return ox.shortest_path(graph, orig_node, dest_node, weight="length")
 
 
+def path_length_m(graph: nx.MultiDiGraph, orig_node: int, dest_node: int) -> float | None:
+    """두 노드 사이의 실제 도보 거리(m). 경로가 없으면 None."""
+    try:
+        return nx.shortest_path_length(graph, orig_node, dest_node, weight="length")
+    except nx.NetworkXNoPath:
+        return None
+
+
 def shortest_path_between(
     graph: nx.MultiDiGraph,
     orig_lon: float,

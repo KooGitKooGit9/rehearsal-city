@@ -82,8 +82,13 @@ def decide_activity(
 
     elif state.activity == ACTIVITY_WORK and tick >= schedule.leave_work_tick:
         if schedule.has_leisure_stop:
-            store_node, _, _ = pick_store(state.lon, state.lat, rng)
-            state.path = shortest_path_between_nodes(graph, state.node, store_node) or [state.node]
+            if state.habitual_store_node is None:
+                # 첫 여가 방문 — 규칙 기반으로 단골 매장을 한 번 배정하고 이후 고정한다 (원칙 1)
+                store_node, _, _ = pick_store(state.lon, state.lat, rng)
+                state.habitual_store_node = store_node
+            state.path = (
+                shortest_path_between_nodes(graph, state.node, state.habitual_store_node) or [state.node]
+            )
             state.activity = ACTIVITY_LEISURE
             state.dwell_remaining = LEISURE_DWELL_TICKS
         else:

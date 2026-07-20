@@ -20,13 +20,14 @@ POI_TAGS = {
 
 
 def attach_nearest_nodes(raw_pois: list[dict], graph: nx.MultiDiGraph) -> list[dict]:
-    """[{"lon","lat","name"}, ...] 원자료에 최근접 그래프 노드를 붙인다 (순수 함수, 테스트 용이)."""
+    """[{"lon","lat","name","category"}, ...] 원자료에 최근접 그래프 노드를 붙인다 (순수 함수, 테스트 용이)."""
     return [
         {
             "node": nearest_node(graph, item["lon"], item["lat"]),
             "lon": item["lon"],
             "lat": item["lat"],
             "name": item["name"],
+            "category": item["category"],
         }
         for item in raw_pois
     ]
@@ -44,7 +45,15 @@ def _raw_pois_from_cache_or_fetch(region: RegionConfig) -> list[dict]:
         if geom.geom_type != "Point":
             continue
         name = row.get("name")
-        raw.append({"lon": geom.x, "lat": geom.y, "name": name if isinstance(name, str) else None})
+        category = row.get("amenity") or row.get("shop")
+        raw.append(
+            {
+                "lon": geom.x,
+                "lat": geom.y,
+                "name": name if isinstance(name, str) else None,
+                "category": category if isinstance(category, str) else "unknown",
+            }
+        )
 
     cache_path.parent.mkdir(parents=True, exist_ok=True)
     cache_path.write_text(json.dumps(raw, ensure_ascii=False))

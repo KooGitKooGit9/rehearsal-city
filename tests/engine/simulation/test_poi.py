@@ -12,8 +12,8 @@ def _sample_graph() -> nx.MultiDiGraph:
 
 def test_attach_nearest_nodes_maps_to_closest_graph_node():
     raw = [
-        {"lon": 0.01, "lat": 0.01, "name": "카페 A"},
-        {"lon": 0.99, "lat": 0.0, "name": None},
+        {"lon": 0.01, "lat": 0.01, "name": "카페 A", "category": "cafe"},
+        {"lon": 0.99, "lat": 0.0, "name": None, "category": "unknown"},
     ]
 
     result = attach_nearest_nodes(raw, _sample_graph())
@@ -21,3 +21,4 @@ def test_attach_nearest_nodes_maps_to_closest_graph_node():
     assert result[0]["node"] == 1
     assert result[1]["node"] == 2
     assert result[0]["name"] == "카페 A"
+    assert result[0]["category"] == "cafe"
