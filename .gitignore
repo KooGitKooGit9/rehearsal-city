@@ -1,0 +1,58 @@
+# === 시크릿 / 환경 ===
+.env
+.env.local
+*.pem
+*.key
+
+# === Python ===
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+dist/
+build/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+
+# === Node / React (web) ===
+node_modules/
+web/build/
+web/dist/
+npm-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# === 데이터 / 캐시 (커밋 금지: 공공 API 원본·중간 산출물) ===
+data/raw/
+data/cache/
+data/*.geojson
+data/*.parquet
+data/*.gpkg
+*.osm
+*.osm.pbf
+# OSMnx / geopandas 캐시
+cache/
+.osmnx_cache/
+
+# === DB 볼륨 (docker-compose PostGIS) ===
+pgdata/
+*.dump
+*.sql.bak
+
+# === 로그 ===
+*.log
+logs/
+
+# === OS / 에디터 ===
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*~

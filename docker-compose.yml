@@ -1,0 +1,29 @@
+# 리허설시티 인프라 — DB만 도커로 실행 (docs/DECISIONS.md D8)
+# Python/React 코드는 각자 로컬에서 실행. 여기엔 PostGIS 컨테이너만 둔다.
+# 실행:  docker-compose up -d
+# 종료:  docker-compose down   (데이터 유지: 볼륨은 남음)
+
+# 프로젝트 이름 고정 (디렉토리명이 한글이라 자동 유추가 실패하므로 명시)
+name: rehearsal_city
+
+services:
+  db:
+    image: postgis/postgis:16-3.4
+    container_name: rehearsal_city_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-rehearsal}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change_me_in_local_env}
+      POSTGRES_DB: ${POSTGRES_DB:-rehearsal_city}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      # DB 데이터 영속화 (.gitignore 에 pgdata/ 등록됨)
+      - ./pgdata:/var/lib/postgresql/data
+      # 최초 기동 시 PostGIS 확장 활성화 스크립트 자동 실행
+      - ./data/db/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-rehearsal} -d ${POSTGRES_DB:-rehearsal_city}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
