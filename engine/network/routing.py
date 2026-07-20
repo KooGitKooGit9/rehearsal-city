@@ -9,6 +9,10 @@ def nearest_node(graph: nx.MultiDiGraph, lon: float, lat: float) -> int:
     return ox.distance.nearest_nodes(graph, lon, lat)
 
 
+def shortest_path_between_nodes(graph: nx.MultiDiGraph, orig_node: int, dest_node: int) -> list[int] | None:
+    return ox.shortest_path(graph, orig_node, dest_node, weight="length")
+
+
 def shortest_path_between(
     graph: nx.MultiDiGraph,
     orig_lon: float,
@@ -18,4 +22,4 @@ def shortest_path_between(
 ) -> list[int] | None:
     orig_node = nearest_node(graph, orig_lon, orig_lat)
     dest_node = nearest_node(graph, dest_lon, dest_lat)
-    return ox.shortest_path(graph, orig_node, dest_node, weight="length")
+    return shortest_path_between_nodes(graph, orig_node, dest_node)
