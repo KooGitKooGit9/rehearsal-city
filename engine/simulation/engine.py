@@ -15,8 +15,8 @@ from engine.population.models import Citizen
 from engine.simulation.clock import TICKS_PER_DAY, tick_to_clock_str
 from engine.simulation.consumption import NEAREST_CANDIDATE_COUNT, pick_store
 from engine.simulation.movement import advance_along_path
-from engine.simulation.scheduler import decide_activity, generate_schedule
-from engine.simulation.state import ACTIVITY_HOME, ACTIVITY_LEISURE, ACTIVITY_WORK, CitizenState
+from engine.simulation.scheduler import DailySchedule, decide_activity, generate_schedule
+from engine.simulation.state import ACTIVITY_HOME, ACTIVITY_LEISURE, CitizenState
 
 
 def _euclidean(lon1: float, lat1: float, lon2: float, lat2: float) -> float:
@@ -50,13 +50,15 @@ class SimulationEngine:
         self.states = [CitizenState.at_home(c) for c in citizens]
         self.schedules = [generate_schedule(c.home_node, graph, self.rng) for c in citizens]
 
+        # 하루 시작 시점에 그날 여가 방문 예정자를 한 번에 배치 판단한다 (틱마다 나눠 부르면
+        # 요청 수가 늘어 LLM 분당 요청 제한에 쉽게 걸린다 — 실제로 겪은 문제라 이렇게 바꿈).
+        if self.new_store is not None and self.llm_client is not None:
+            self._process_daily_turning_points()
+
     def _pick_store(self, lon: float, lat: float, rng: random.Random) -> tuple[int, float, float]:
         return pick_store(lon, lat, self.pois, rng)
 
     def step(self) -> None:
-        if self.new_store is not None and self.llm_client is not None:
-            self._process_turning_points()
-
         for state, schedule in zip(self.states, self.schedules):
             was_leisure = state.activity == ACTIVITY_LEISURE
             decide_activity(state, schedule, self.tick, self.graph, self._pick_store, self.rng)
@@ -91,6 +93,9 @@ class SimulationEngine:
             generate_schedule(state.citizen.home_node, self.graph, self.rng) for state in self.states
         ]
 
+        if self.new_store is not None and self.llm_client is not None:
+            self._process_daily_turning_points()
+
     def _poi_by_node(self, node: int | None) -> dict | None:
         if node is None:
             return None
@@ -107,47 +112,52 @@ class SimulationEngine:
             return "알 수 없음"
         return poi.get("name") or f"{poi.get('category', '알 수 없음')} 매장"
 
-    def _new_store_is_candidate(self, state: CitizenState) -> bool:
+    def _new_store_is_candidate_from(self, lon: float, lat: float) -> bool:
         candidates = self.pois + [self.new_store]
-        ranked = sorted(candidates, key=lambda p: _euclidean(state.lon, state.lat, p["lon"], p["lat"]))
+        ranked = sorted(candidates, key=lambda p: _euclidean(lon, lat, p["lon"], p["lat"]))
         return any(p["node"] == self.new_store["node"] for p in ranked[:NEAREST_CANDIDATE_COUNT])
 
-    def _build_decision_request(self, state: CitizenState) -> DecisionRequest:
+    def _build_decision_request(self, state: CitizenState, schedule: DailySchedule) -> DecisionRequest:
         habitual_poi = self._poi_by_node(state.habitual_store_node)
+        origin_node = schedule.workplace_node
         return DecisionRequest(
             citizen_id=state.citizen.citizen_id,
             gender=state.citizen.gender,
             age_band=state.citizen.age_band,
             new_store_name=self.new_store.get("name") or "신규 매장",
             new_store_category=self.new_store["category"],
-            distance_to_new_store_m=path_length_m(self.graph, state.node, self.new_store["node"]) or 0.0,
+            distance_to_new_store_m=path_length_m(self.graph, origin_node, self.new_store["node"]) or 0.0,
             current_store_category=habitual_poi["category"] if habitual_poi else None,
             distance_to_current_store_m=(
-                path_length_m(self.graph, state.node, state.habitual_store_node) if habitual_poi else None
+                path_length_m(self.graph, origin_node, state.habitual_store_node) if habitual_poi else None
             ),
         )
 
-    def _process_turning_points(self) -> None:
-        eligible_states = [
-            state
-            for state, schedule in zip(self.states, self.schedules)
-            if (
-                state.activity == ACTIVITY_WORK
-                and self.tick >= schedule.leave_work_tick
-                and schedule.has_leisure_stop
+    def _process_daily_turning_points(self) -> None:
+        """오늘 여가 방문 예정자 중 신규 매장을 처음 접하는 사람을 모아 배치 1회로 판단한다.
+
+        직장 위치를 출발점으로 삼는다 — 실제로 여가 결정을 내리는 시점(퇴근 후)의
+        위치에 가장 가깝기 때문.
+        """
+        eligible: list[tuple[CitizenState, DailySchedule]] = []
+        for state, schedule in zip(self.states, self.schedules):
+            if not (
+                schedule.has_leisure_stop
                 and state.habitual_store_node is not None
                 and self.new_store["node"] not in state.decided_new_stores
-                and self._new_store_is_candidate(state)
-            )
-        ]
+            ):
+                continue
+            workplace = self.graph.nodes[schedule.workplace_node]
+            if self._new_store_is_candidate_from(workplace["x"], workplace["y"]):
+                eligible.append((state, schedule))
 
-        if not eligible_states:
+        if not eligible:
             return
 
-        requests = [self._build_decision_request(s) for s in eligible_states]
+        requests = [self._build_decision_request(state, schedule) for state, schedule in eligible]
         results = decide_batch_with_cache(self.llm_client, self.decision_cache, requests)
 
-        for state, result in zip(eligible_states, results):
+        for (state, _), result in zip(eligible, results):
             state.decided_new_stores.add(self.new_store["node"])
             if result.switch_to_new_store:
                 self.switch_log.append(

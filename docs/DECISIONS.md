@@ -66,3 +66,8 @@
 - 함의: Phase 4 백테스트에서 판단 품질이 기준에 못 미치면 재검토한다.
   구현체(engine/decision/gemini_client.py) 하나만 교체하면 되도록 설계했으므로
   다른 제공사로 바꾸는 전환 비용은 낮다
+- 추가 발견(2026-07-21, what-if 실제 검증 중): 무료 티어의 `gemini-2.5-flash-lite`는
+  **일일 요청 한도가 20회**로 매우 작다(`GenerateRequestsPerDayPerProjectPerModel-FreeTier`).
+  분당 한도(RPM)뿐 아니라 일일 한도까지 있어, 데모·개발 중 반복 호출로 하루 치를
+  금방 소진할 수 있음 — 실제 what-if 라이브 검증이 이 한도에 막힘. 유료 결제 설정
+  또는 다음날 재시도로 해결 가능. 프로덕션 전환 시 유료 티어 전환이 사실상 필수

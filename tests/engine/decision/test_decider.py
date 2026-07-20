@@ -71,3 +71,48 @@ def test_mixed_hit_and_miss_preserves_order():
     assert results[1].reason == "fake-99"  # 캐시 미스 -> LLM 호출 결과
     assert len(client.calls) == 2
     assert len(client.calls[1]) == 1  # 미스 1건만 배치에 포함됨
+
+
+class ShortFakeLLMClient(LLMClient):
+    """실제로 겪은 문제를 재현 — 요청보다 적은 개수의 결과를 반환하는 가짜 클라이언트."""
+
+    def decide_batch(self, requests: list[DecisionRequest]) -> list[DecisionResult]:
+        return [
+            DecisionResult(switch_to_new_store=True, probability=0.5, reason=f"fake-{r.citizen_id}")
+            for r in requests[:-1]
+        ]
+
+
+def _unique_request(citizen_id: int) -> DecisionRequest:
+    # 프로파일 캐시가 재사용되지 않도록 시민마다 다른 거리 구간을 준다
+    return DecisionRequest(
+        citizen_id=citizen_id,
+        gender="MALE",
+        age_band="F30T34",
+        new_store_name="테스트 카페",
+        new_store_category="cafe",
+        distance_to_new_store_m=100.0 * citizen_id,
+    )
+
+
+def test_missing_llm_response_falls_back_conservatively_instead_of_crashing():
+    client = ShortFakeLLMClient()
+    cache = DecisionCache()
+    requests = [_unique_request(i) for i in range(3)]
+
+    results = decide_batch_with_cache(client, cache, requests)
+
+    assert len(results) == 3
+    assert all(r is not None for r in results)
+    assert results[-1].switch_to_new_store is False  # 응답 누락분은 보수적으로 미전환 처리
+
+
+def test_large_batch_is_split_into_chunks():
+    client = FakeLLMClient()
+    cache = DecisionCache()
+    requests = [_unique_request(i) for i in range(45)]  # MAX_BATCH_SIZE(20)의 배수가 아님
+
+    results = decide_batch_with_cache(client, cache, requests)
+
+    assert len(results) == 45
+    assert [len(c) for c in client.calls] == [20, 20, 5]
