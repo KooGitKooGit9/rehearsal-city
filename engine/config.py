@@ -20,6 +20,10 @@ class RegionConfig:
     def cache_path(self) -> Path:
         return CACHE_DIR / f"{self.slug}_{self.network_type}.graphml"
 
+    @property
+    def citizens_path(self) -> Path:
+        return CACHE_DIR / f"{self.slug}_citizens.geojson"
+
 
 DEMO_REGION = RegionConfig(
     slug="seongsu",
