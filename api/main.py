@@ -6,6 +6,7 @@ from dataclasses import asdict
 
 import networkx as nx
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from engine.config import DEMO_REGION
@@ -23,6 +24,14 @@ TICK_INTERVAL_SEC = 0.2
 NUM_CITIZENS = 1000
 
 app = FastAPI()
+
+# 개발 중인 웹 대시보드(Vite, localhost:5173)에서 /api/whatif를 호출하려면 CORS 허용 필요
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 def _load_world() -> tuple[nx.MultiDiGraph, list[Citizen], list[dict]]:

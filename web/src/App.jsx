@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import DeckGL from "@deck.gl/react";
-import { TileLayer, BitmapLayer, GeoJsonLayer } from "deck.gl";
+import { TileLayer, BitmapLayer, GeoJsonLayer, ScatterplotLayer } from "deck.gl";
+import WhatIfPanel from "./WhatIfPanel";
 import "./App.css";
 
 // 성수동 bbox 중심 (docs 조사: lon 127.026~127.052, lat 37.533~37.549)
@@ -26,6 +27,7 @@ function App() {
   const [hoverInfo, setHoverInfo] = useState(null);
   const [snapshot, setSnapshot] = useState(null);
   const [connected, setConnected] = useState(false);
+  const [newStoreLocation, setNewStoreLocation] = useState(null);
   const wsRef = useRef(null);
 
   useEffect(() => {
@@ -72,7 +74,20 @@ function App() {
       pickable: true,
       onHover: (info) => setHoverInfo(info.object ? info : null),
     }),
-  ];
+    newStoreLocation &&
+      new ScatterplotLayer({
+        id: "new-store-marker",
+        data: [newStoreLocation],
+        getPosition: (d) => [d.lon, d.lat],
+        getRadius: 14,
+        radiusUnits: "meters",
+        getFillColor: [211, 47, 47, 230],
+        getLineColor: [255, 255, 255, 255],
+        lineWidthMinPixels: 2,
+        stroked: true,
+        pickable: false,
+      }),
+  ].filter(Boolean);
 
   return (
     <div style={{ position: "relative", width: "100vw", height: "100vh" }}>
@@ -80,6 +95,11 @@ function App() {
         initialViewState={INITIAL_VIEW_STATE}
         controller={true}
         layers={layers}
+        onClick={(info) => {
+          if (info.coordinate) {
+            setNewStoreLocation({ lon: info.coordinate[0], lat: info.coordinate[1] });
+          }
+        }}
       />
       {hoverInfo && (
         <div
@@ -118,7 +138,18 @@ function App() {
             서버 연결 안 됨 — api 서버(uvicorn api.main:app)를 실행하세요
           </span>
         )}
+        {!newStoreLocation && (
+          <div style={{ marginTop: 4, color: "#555" }}>
+            지도를 클릭해 신규 매장 위치를 선택하세요
+          </div>
+        )}
       </div>
+      {newStoreLocation && (
+        <WhatIfPanel
+          location={newStoreLocation}
+          onClose={() => setNewStoreLocation(null)}
+        />
+      )}
       <div
         style={{
           position: "absolute",
